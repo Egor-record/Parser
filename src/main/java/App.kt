@@ -1,9 +1,11 @@
+import com.google.gson.Gson
 import okhttp3.*
 import org.openqa.selenium.By
 import org.openqa.selenium.StaleElementReferenceException
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
+import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.util.*
 import kotlin.collections.ArrayList
@@ -13,7 +15,8 @@ fun main() {
 
     val chrome : String = "/Library/Chrome/chromedriver"
     val siteURL : String = "https://1xstavka.ru/live/Football/"
-    val apiURL : String = "http://localhost:8080/api/v1/parse/update"
+    val apiURL : String = "http://localhost:8080/api/v1/games/update"
+    val isHeadless : Boolean = true
 
     fun openBrowser(isHeadLess : Boolean) : WebDriver {
         System.setProperty("webdriver.chrome.driver", chrome)
@@ -24,8 +27,14 @@ fun main() {
         return browser.get(siteURL)
     }
 
-    fun sendToAPI(games : ArrayList<Game>) {
+    fun convertToJson(games: ArrayList<Game>) : String? {
+        return Gson().toJson(games)
+    }
+
+    fun sendToAPI(games : String?) {
         Thread(Runnable {
+
+            println(games.toString())
 
             try {
 
@@ -42,12 +51,15 @@ fun main() {
                     .build()
                 val response: Response = client.newCall(request).execute()
 
-                if (!response.isSuccessful) {
-                    response.close()
-                }
+                 response.close()
+
 
             } catch (err : SocketTimeoutException) {
                 println(err)
+            } catch (err: ConnectException) {
+                println(err)
+            } finally {
+
             }
 
 
@@ -56,7 +68,7 @@ fun main() {
     }
 
     fun parse() {
-        val browser = openBrowser(true)
+        val browser = openBrowser(isHeadless)
 
         getUrl(browser)
 
@@ -85,7 +97,10 @@ fun main() {
                                      teamSecond =  teamDivs[1].text,
                                      scoreFirstTeam = scoreDivs[0].text,
                                      scoreSecondTeam = scoreDivs[1].text,
-                                     league = "FIFA"
+                                     league = "FIFA",
+                                    betName = "1xBet"
+
+
                          );
 
                      games.add(game)
@@ -97,12 +112,14 @@ fun main() {
                  kotlin.io.println("No Element !")
              }
 
-                sendToAPI(games)
+                sendToAPI(convertToJson(games))
 
             }
         }, 0, 10000)
 
     }
+
+
 
     parse()
 }

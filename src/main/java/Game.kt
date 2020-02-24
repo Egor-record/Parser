@@ -4,4 +4,5 @@ class Game(
     var scoreFirstTeam: String,
     var scoreSecondTeam: String,
     val typeOfTheGame: String = "Football",
-    val league: String)
+    val league: String,
+    val betName: String)
